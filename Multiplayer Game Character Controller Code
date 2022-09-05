@@ -1,0 +1,86 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Photon.Pun;
+
+public class CharacterController : MonoBehaviour
+{
+
+    public float moveSpeed = 5f;
+
+    public Rigidbody2D rb;
+
+    Vector2 movement;
+
+    PhotonView view;
+
+    public float health;
+
+    public GameObject deathSceen;
+    public GameObject Spawner;
+
+    // public Camera cam;
+
+    // Vector2 mousePos;
+
+    private void Start()
+    {
+        Spawner = GameObject.Find("PlayerSpawner");
+        deathSceen = Spawner.GetComponent<PlayerSpawner>().deathScreen;
+        health = 100;
+        view = GetComponent<PhotonView>();
+    }
+    void Update()
+    {
+        if(view.IsMine)
+        {
+            movement.x = Input.GetAxisRaw("Horizontal");
+            movement.y = Input.GetAxisRaw("Vertical");
+        }
+
+        //look mouse code 2
+      //  mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
+    }
+
+    void FixedUpdate()
+    {
+        if(view.IsMine)
+        {
+            rb.MovePosition(rb.position + movement * moveSpeed * Time.fixedDeltaTime);
+        }
+
+        //look mouse code 2
+       // Vector2 lookDir = mousePos - rb.position;
+       // float angle = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg - 90f;
+       // rb.rotation = angle;
+    }
+    private void OnTriggerEnter2D(Collider2D col)
+    {
+        if(col.gameObject.tag == "Bullet")
+        {
+           
+                GetComponent<PhotonView>().RPC("HasarAl", RpcTarget.All, 10f);
+            
+
+        }
+    }
+
+    [PunRPC]
+    void HasarAl(float damage)
+    {
+        health -= damage;
+        Debug.Log("Take " + damage + " damage from ");
+        ShakeTimeRemaining.instance.StartShake(.3f, .2f);
+
+        if (health <= 0)
+        {
+            Debug.Log("killing from ");
+            if(view.IsMine)
+            {
+                deathSceen.SetActive(true);
+            }
+            PhotonNetwork.Destroy(gameObject);
+        }
+    }
+
+}
